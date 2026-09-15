@@ -3,26 +3,23 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Ball Pit</title>
-<meta name="description" content="A playful 3D ball pit — pick a color and drop balls into the tank. Scan the QR to play on your phone." />
+<title>Drop Pit</title>
+<meta name="description" content="A minimalist 3D pit — pick a shape and color, and drop objects into the tank. Scan to play on your phone." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" />
 <style>
   :root{
-    --bg:#0b1020; --bg2:#141b36; --ink:#eef2ff; --muted:#9aa6d0; --line:rgba(255,255,255,.14);
-    --panel:rgba(16,22,46,.72); --accent:#8b7bff; --mint:#5ee6b4; --gold:#ffd166;
-    --display:'Bricolage Grotesque', system-ui, sans-serif;
+    --bg:#0c0d10; --bg2:#141519; --ink:#f3f4f6; --muted:#8b8f9a; --line:rgba(255,255,255,.12);
+    --surface:rgba(20,21,26,.66); --accent:#f3f4f6;
     --body:'IBM Plex Sans', system-ui, sans-serif;
     --mono:'Space Mono', ui-monospace, monospace;
-    --shadow:0 24px 64px -30px rgba(0,0,0,.85);
     color-scheme:dark;
   }
   @media (prefers-color-scheme: light){
     :root{
-      --bg:#e8ebf7; --bg2:#f5f7fe; --ink:#161a2c; --muted:#5b6488; --line:rgba(20,24,50,.14);
-      --panel:rgba(255,255,255,.78); --accent:#5b46e0; --mint:#149a6c; --gold:#c9911a;
-      --shadow:0 24px 64px -34px rgba(40,44,90,.45);
+      --bg:#f6f6f4; --bg2:#ffffff; --ink:#17181c; --muted:#6c6f78; --line:rgba(20,22,28,.14);
+      --surface:rgba(255,255,255,.72); --accent:#17181c;
       color-scheme:light;
     }
   }
@@ -30,93 +27,103 @@
   html,body{margin:0; height:100%}
   body{
     font-family:var(--body); color:var(--ink); overflow:hidden;
-    background:radial-gradient(130% 100% at 50% 6%, var(--bg2), var(--bg) 68%);
+    background:radial-gradient(120% 120% at 50% 0%, var(--bg2), var(--bg) 70%);
     -webkit-font-smoothing:antialiased;
   }
-  img{max-width:100%}
   [hidden]{display:none!important}
-  button{font-family:inherit; cursor:pointer}
+  button{font-family:inherit; cursor:pointer; color:inherit}
   #tank{position:fixed; inset:0; z-index:0; width:100%; height:100%; touch-action:none; cursor:grab}
   #tank:active{cursor:grabbing}
 
   .ui{position:fixed; inset:0; z-index:1; pointer-events:none; display:flex; flex-direction:column;
-      padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+      padding:calc(18px + env(safe-area-inset-top,0px)) 18px calc(18px + env(safe-area-inset-bottom,0px))}
 
-  .topbar{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
-  .brand{display:flex; align-items:center; gap:10px}
-  .brand b{font-family:var(--display); font-weight:800; font-size:1.2rem; letter-spacing:.01em}
-  .brand span{display:block; font-family:var(--mono); font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:-3px}
-  .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
-  .live{pointer-events:auto; margin-left:auto; display:flex; align-items:center; gap:9px; background:var(--panel); border:1px solid var(--line);
-        border-radius:20px; padding:7px 13px; backdrop-filter:blur(14px); box-shadow:var(--shadow)}
-  .live b{font-variant-numeric:tabular-nums}
-  .clear{pointer-events:auto; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:20px;
-         padding:8px 13px; font-family:var(--mono); font-size:.72rem; backdrop-filter:blur(14px)}
-  .clear:hover{color:var(--ink); border-color:var(--accent)}
+  /* top */
+  .top{display:flex; align-items:center; gap:12px}
+  .mark{font-family:var(--mono); font-weight:700; letter-spacing:.24em; text-transform:uppercase; font-size:.82rem}
+  .count{font-family:var(--mono); font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums}
+  .tools{margin-left:auto; display:flex; gap:8px; pointer-events:auto}
+  .ico{width:34px; height:34px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+       backdrop-filter:blur(12px); display:grid; place-items:center; font-size:.9rem; color:var(--muted); transition:color .15s, border-color .15s}
+  .ico:hover{color:var(--ink); border-color:var(--ink)}
 
   .spacer{flex:1}
 
-  .dock{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
-  .controls{pointer-events:auto; background:var(--panel); border:1px solid var(--line); border-radius:20px;
-            padding:16px; backdrop-filter:blur(16px); box-shadow:var(--shadow); flex:1 1 320px; max-width:520px}
-  .clabel{font-family:var(--mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
-  .swatches{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:14px}
-  .sw{width:34px;height:34px;border-radius:11px; border:2px solid transparent; cursor:pointer; transition:transform .12s; box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
-  .sw:hover{transform:scale(1.08)}
+  /* bottom control bar */
+  .bar{pointer-events:auto; align-self:center; width:min(720px,100%);
+       background:var(--surface); border:1px solid var(--line); backdrop-filter:blur(16px);
+       border-radius:16px; padding:12px 14px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; justify-content:center}
+  .grp{display:flex; align-items:center; gap:10px}
+  .lab{font-family:var(--mono); font-size:.58rem; letter-spacing:.18em; text-transform:uppercase; color:var(--muted)}
+  .shapes{display:flex; gap:6px}
+  .shape{width:38px; height:38px; border-radius:10px; border:1px solid var(--line); background:transparent;
+         display:grid; place-items:center; transition:border-color .15s, background .15s, transform .1s}
+  .shape svg{width:20px; height:20px; fill:none; stroke:var(--muted); stroke-width:1.6}
+  .shape:hover{transform:translateY(-2px)}
+  .shape.on{border-color:var(--ink); background:color-mix(in srgb, var(--ink) 8%, transparent)}
+  .shape.on svg{stroke:var(--ink)}
+  .sep{width:1px; align-self:stretch; background:var(--line); margin:2px 0}
+  .colors{display:flex; gap:7px; flex-wrap:wrap; max-width:230px}
+  .sw{width:24px; height:24px; border-radius:50%; border:2px solid transparent; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15); transition:transform .1s}
+  .sw:hover{transform:scale(1.12)}
   .sw.on{border-color:var(--ink); transform:scale(1.12)}
-  .drop{width:100%; border:none; border-radius:15px; padding:17px; font-family:var(--display); font-weight:800; font-size:1.25rem;
-        color:#0a0620; display:flex; align-items:center; justify-content:center; gap:10px; transition:transform .1s, box-shadow .2s}
-  .drop:active{transform:scale(.97)}
-  .drop small{font-family:var(--mono); font-weight:400; font-size:.7rem; color:rgba(10,6,32,.6)}
+  .drop{border:1px solid var(--ink); background:var(--ink); color:var(--bg); border-radius:11px;
+        padding:11px 20px; font-family:var(--mono); font-weight:700; font-size:.82rem; letter-spacing:.06em; text-transform:uppercase; transition:transform .1s, opacity .15s}
+  .drop:active{transform:scale(.96)}
 
-  .join{pointer-events:auto; background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:14px;
-        backdrop-filter:blur(16px); box-shadow:var(--shadow); display:flex; gap:14px; align-items:center; flex:0 0 auto}
-  .join #qr{width:104px;height:104px;background:#fff;border-radius:12px;padding:7px; display:grid; place-items:center}
-  .join #qr img,.join #qr canvas{width:100%!important;height:100%!important;image-rendering:pixelated}
-  .join .jt{max-width:210px}
-  .join h3{font-family:var(--display); font-weight:700; margin:0 0 4px; font-size:1.05rem}
-  .join p{margin:0; color:var(--muted); font-size:.8rem; line-height:1.4}
-  .join .u{font-family:var(--mono); font-size:.62rem; color:var(--mint); word-break:break-all; margin-top:6px; cursor:pointer}
-  .note{pointer-events:none; text-align:center; font-family:var(--mono); font-size:.62rem; color:var(--muted); margin-top:10px; width:100%}
+  .hint{align-self:center; font-family:var(--mono); font-size:.6rem; color:var(--muted); margin-top:10px}
 
-  @media (max-width:640px){
-    .join{order:-1; width:100%}
-    .join #qr{width:84px;height:84px}
-    .controls{max-width:none}
+  /* QR */
+  .qr{position:fixed; top:calc(64px + env(safe-area-inset-top,0px)); right:18px; z-index:1; pointer-events:auto;
+      background:var(--surface); border:1px solid var(--line); backdrop-filter:blur(14px); border-radius:12px;
+      padding:10px; display:flex; flex-direction:column; align-items:center; gap:6px; width:104px}
+  .qr #qr{width:84px; height:84px; background:#fff; border-radius:7px; padding:5px; display:grid; place-items:center}
+  .qr #qr img,.qr #qr canvas{width:100%!important; height:100%!important; image-rendering:pixelated}
+  .qr small{font-family:var(--mono); font-size:.5rem; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
+
+  @media (max-width:560px){
+    .qr{width:78px; top:auto; bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+    .qr #qr{width:60px;height:60px}
+    .bar{gap:12px; padding:12px}
+    .colors{max-width:180px}
   }
-  @media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms!important} }
+  @media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms!important; transition-duration:.001ms!important} }
 </style>
 </head>
 <body>
-<canvas id="tank" aria-label="A 3D ball pit. Drag to look around, tap to drop a ball."></canvas>
+<canvas id="tank" aria-label="A 3D pit. Drag to look around, tap to drop an object."></canvas>
 
 <div class="ui">
-  <div class="topbar">
-    <div class="brand"><span class="dot"></span><div><b>BALL PIT</b><span>pick · drop · pile up</span></div></div>
-    <div class="live"><b id="count">0</b>&nbsp;balls</div>
-    <button class="clear" id="clearBtn">✕ clear</button>
+  <div class="top">
+    <span class="mark">Drop&nbsp;Pit</span>
+    <span class="count"><b id="count">0</b> objects</span>
+    <div class="tools">
+      <button class="ico" id="soundBtn" title="Sound" aria-label="Toggle sound">♪</button>
+      <button class="ico" id="clearBtn" title="Clear" aria-label="Clear pit">✕</button>
+    </div>
   </div>
 
   <div class="spacer"></div>
 
-  <div class="dock">
-    <div class="controls">
-      <div class="clabel">1 · your color</div>
-      <div class="swatches" id="swatches"></div>
-      <div class="clabel">2 · drop it in</div>
-      <button class="drop" id="dropBtn">🫳 DROP A BALL <small>(or tap the tank)</small></button>
+  <div class="bar">
+    <div class="grp">
+      <span class="lab">shape</span>
+      <div class="shapes" id="shapes"></div>
     </div>
-
-    <div class="join">
-      <div id="qr"></div>
-      <div class="jt">
-        <h3>📱 Scan to play</h3>
-        <p>Point a phone camera at the code to open the pit on your phone.</p>
-        <div class="u" id="shareUrl" title="Copy link"></div>
-      </div>
+    <div class="sep"></div>
+    <div class="grp">
+      <span class="lab">color</span>
+      <div class="colors" id="colors"></div>
     </div>
+    <div class="sep"></div>
+    <button class="drop" id="dropBtn">Drop</button>
   </div>
-  <div class="note">Drag to look around · tap the tank or the button to drop a ball.</div>
+  <div class="hint">drag to look around · tap the tank to drop</div>
+</div>
+
+<div class="qr">
+  <div id="qr"></div>
+  <small>scan to play</small>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -127,80 +134,108 @@
 (function(){
   var $=function(s){return document.querySelector(s);};
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches;
-  var isSmall = Math.min(innerWidth,innerHeight) < 640;
+  var isSmall = Math.min(innerWidth,innerHeight) < 560;
 
-  /* ---------- colors ---------- */
-  var COLORS=["#ff5d5d","#ff9f43","#ffd93d","#7be06b","#4ecdc4","#5aa9ff","#8b7bff","#ff6fd8","#ffffff","#2b2b3a"];
+  /* ---------- selections ---------- */
+  var COLORS=["#ef5f5f","#f2994a","#f2c94c","#6fcf80","#4fd1c5","#5b8def","#9b7bff","#f277c6","#eef0f3","#22242e"];
   var myColor = COLORS[Math.floor(Math.random()*8)];
+  var myShape = "ball";
+  var muted = false;
 
-  (function buildSwatches(){
-    var box=$("#swatches");
-    COLORS.forEach(function(c){
+  var SHAPE_ICONS = {
+    ball:    '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>',
+    cube:    '<svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>',
+    pyramid: '<svg viewBox="0 0 24 24"><path d="M12 4 L20 19 L4 19 Z" stroke-linejoin="round"/></svg>',
+    diamond: '<svg viewBox="0 0 24 24"><path d="M12 3 L20 12 L12 21 L4 12 Z" stroke-linejoin="round"/></svg>'
+  };
+  var SHAPE_ORDER=["ball","cube","pyramid","diamond"];
+
+  (function buildShapes(){
+    var box=$("#shapes");
+    SHAPE_ORDER.forEach(function(s){
       var b=document.createElement("button");
-      b.className="sw"+(c===myColor?" on":""); b.style.background=c; b.setAttribute("aria-label","color "+c);
+      b.className="shape"+(s===myShape?" on":""); b.innerHTML=SHAPE_ICONS[s]; b.title=s;
       b.addEventListener("click", function(){
-        myColor=c;
-        box.querySelectorAll(".sw").forEach(function(s){ s.classList.remove("on"); });
-        b.classList.add("on"); $("#dropBtn").style.background=c;
+        myShape=s; box.querySelectorAll(".shape").forEach(function(x){x.classList.remove("on");}); b.classList.add("on");
       });
       box.appendChild(b);
     });
-    $("#dropBtn").style.background=myColor;
+  })();
+  (function buildColors(){
+    var box=$("#colors");
+    COLORS.forEach(function(c){
+      var b=document.createElement("button");
+      b.className="sw"+(c===myColor?" on":""); b.style.background=c; b.setAttribute("aria-label","color");
+      b.addEventListener("click", function(){
+        myColor=c; box.querySelectorAll(".sw").forEach(function(x){x.classList.remove("on");}); b.classList.add("on");
+      });
+      box.appendChild(b);
+    });
   })();
 
-  /* ---------- QR of this page's own URL ---------- */
+  /* ---------- QR of this page's URL ---------- */
   var SHARE_URL = window.location.href.split("#")[0];
-  var isWeb = /^https?:/i.test(SHARE_URL);
   try{
-    new QRCode($("#qr"), {text:SHARE_URL, width:180, height:180, colorDark:"#0b1020", colorLight:"#ffffff",
+    new QRCode($("#qr"), {text:SHARE_URL, width:160, height:160, colorDark:"#0c0d10", colorLight:"#ffffff",
       correctLevel:(window.QRCode&&QRCode.CorrectLevel)?QRCode.CorrectLevel.M:undefined});
   }catch(e){ $("#qr").textContent="QR"; }
-  $("#shareUrl").textContent = isWeb ? SHARE_URL : "host this page online to make the QR scannable";
-  $("#shareUrl").addEventListener("click", function(){
-    if(!isWeb) return;
-    try{ navigator.clipboard.writeText(SHARE_URL); var o=$("#shareUrl").textContent; $("#shareUrl").textContent="copied ✓"; setTimeout(function(){ $("#shareUrl").textContent=o; },1200);}catch(e){}
+
+  /* ---------- soft drop sound ---------- */
+  var actx=null;
+  $("#soundBtn").addEventListener("click", function(){
+    muted=!muted; this.textContent = muted?"—":"♪"; this.style.color = muted?"var(--muted)":"var(--ink)";
   });
+  function tock(){
+    if(muted) return;
+    try{
+      actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+      var o=actx.createOscillator(), g=actx.createGain(), t=actx.currentTime;
+      o.type="sine"; o.frequency.value=150+Math.random()*50;
+      g.gain.setValueAtTime(0.09,t); g.gain.exponentialRampToValueAtTime(0.0008,t+0.13);
+      o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+0.14);
+    }catch(e){}
+  }
 
   /* ==========================================================
-     3D tank: three.js render + cannon.js physics
+     3D pit — three.js render + cannon.js physics
   ========================================================== */
   var canvas=$("#tank");
-  if(typeof THREE==="undefined" || typeof CANNON==="undefined"){ $("#count").textContent="3D failed to load"; return; }
+  if(typeof THREE==="undefined" || typeof CANNON==="undefined"){ $("#count").textContent="—"; return; }
   var renderer;
-  try{ renderer=new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true}); }
-  catch(e){ return; }
+  try{ renderer=new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true}); }catch(e){ return; }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 
   var scene=new THREE.Scene();
-  var camera=new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 200);
-  scene.add(new THREE.AmbientLight(0xffffff,0.6));
-  var key=new THREE.DirectionalLight(0xffffff,0.9); key.position.set(6,12,8); scene.add(key);
-  var p1=new THREE.PointLight(0x8b7bff,0.8,60); p1.position.set(-8,6,6); scene.add(p1);
-  var p2=new THREE.PointLight(0x5ee6b4,0.6,60); p2.position.set(8,4,-2); scene.add(p2);
+  var camera=new THREE.PerspectiveCamera(44, innerWidth/innerHeight, 0.1, 200);
 
-  var HALF_W=3, HALF_D=2, HEIGHT=8, R=0.34, SPAWN_Y=7;
-  var MAX = isSmall ? 55 : 150;
+  var hemi=new THREE.HemisphereLight(0xffffff,0x30323c,0.85); scene.add(hemi);
+  var key=new THREE.DirectionalLight(0xffffff,0.75); key.position.set(5,15,7); scene.add(key);
+  key.castShadow=true; key.shadow.mapSize.set(1024,1024);
+  key.shadow.camera.left=-6; key.shadow.camera.right=6; key.shadow.camera.top=12; key.shadow.camera.bottom=-3;
+  key.shadow.camera.near=1; key.shadow.camera.far=45; key.shadow.bias=-0.0006;
 
+  var HALF_W=3, HALF_D=2, HEIGHT=8, SPAWN_Y=6.6;
+  var MAX = isSmall ? 45 : 120;
+
+  // floor + minimal glass outline
   var floorMesh=new THREE.Mesh(
-    new THREE.BoxGeometry(2*HALF_W+0.3,0.5,2*HALF_D+0.3),
-    new THREE.MeshStandardMaterial({color:0x1a2140, metalness:0.3, roughness:0.6}));
-  floorMesh.position.y=-0.25; scene.add(floorMesh);
-  var glass=new THREE.Mesh(
-    new THREE.BoxGeometry(2*HALF_W,HEIGHT,2*HALF_D),
-    new THREE.MeshStandardMaterial({color:0x9fb4ff, metalness:0.1, roughness:0.05, transparent:true, opacity:0.06, side:THREE.DoubleSide}));
-  glass.position.y=HEIGHT/2; scene.add(glass);
+    new THREE.BoxGeometry(2*HALF_W+0.2,0.4,2*HALF_D+0.2),
+    new THREE.MeshStandardMaterial({color:0x14151a, metalness:0.0, roughness:0.9}));
+  floorMesh.position.y=-0.2; floorMesh.receiveShadow=true; scene.add(floorMesh);
   var edges=new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.BoxGeometry(2*HALF_W,HEIGHT,2*HALF_D)),
-    new THREE.LineBasicMaterial({color:0x8b7bff, transparent:true, opacity:0.5}));
+    new THREE.LineBasicMaterial({color:0x8a8f9c, transparent:true, opacity:0.28}));
   edges.position.y=HEIGHT/2; scene.add(edges);
 
+  // physics world
   var world=new CANNON.World();
-  world.gravity.set(0,-20,0);
+  world.gravity.set(0,-22,0);
   world.broadphase=new CANNON.NaiveBroadphase();
-  world.solver.iterations=8;
-  var ballMat=new CANNON.Material("ball"), wallMat=new CANNON.Material("wall");
-  world.addContactMaterial(new CANNON.ContactMaterial(ballMat,wallMat,{friction:0.15,restitution:0.35}));
-  world.addContactMaterial(new CANNON.ContactMaterial(ballMat,ballMat,{friction:0.25,restitution:0.2}));
+  world.solver.iterations=10;
+  var objMat=new CANNON.Material("o"), wallMat=new CANNON.Material("w");
+  world.addContactMaterial(new CANNON.ContactMaterial(objMat,wallMat,{friction:0.25,restitution:0.2}));
+  world.addContactMaterial(new CANNON.ContactMaterial(objMat,objMat,{friction:0.35,restitution:0.1}));
 
   function addPlane(px,py,pz, ax,ay,az, angle){
     var b=new CANNON.Body({mass:0, material:wallMat});
@@ -208,45 +243,74 @@
     b.quaternion.setFromAxisAngle(new CANNON.Vec3(ax,ay,az), angle);
     b.position.set(px,py,pz); world.addBody(b);
   }
-  addPlane(0,0,0, 1,0,0, -Math.PI/2);       // floor
-  addPlane(-HALF_W,0,0, 0,1,0, Math.PI/2);   // left
-  addPlane(HALF_W,0,0, 0,1,0, -Math.PI/2);   // right
-  addPlane(0,0,-HALF_D, 0,1,0, 0);           // back
-  addPlane(0,0,HALF_D, 0,1,0, Math.PI);      // front
+  addPlane(0,0,0, 1,0,0, -Math.PI/2);
+  addPlane(-HALF_W,0,0, 0,1,0, Math.PI/2);
+  addPlane(HALF_W,0,0, 0,1,0, -Math.PI/2);
+  addPlane(0,0,-HALF_D, 0,1,0, 0);
+  addPlane(0,0,HALF_D, 0,1,0, Math.PI);
 
-  var sphereGeo=new THREE.SphereGeometry(R,20,16);
-  var sphereShape=new CANNON.Sphere(R);
-  var balls=[];
+  /* ----- shared geometries + colliders ----- */
+  var R=0.36;                       // ball radius
+  var CH=0.32;                      // cube half-extent
+  var Rp=0.44, Hp=0.78;            // pyramid base radius / height
+  var Ro=0.46;                      // diamond radius
 
-  function updateCount(){ $("#count").textContent=balls.length; }
+  var geo={
+    ball:    new THREE.SphereGeometry(R,26,18),
+    cube:    new THREE.BoxGeometry(2*CH,2*CH,2*CH),
+    pyramid: new THREE.ConeGeometry(Rp,Hp,4),
+    diamond: new THREE.OctahedronGeometry(Ro,0)
+  };
 
-  function spawnBall(color,x,z){
-    var mat=new THREE.MeshStandardMaterial({color:color, metalness:0.2, roughness:0.28,
-      emissive:new THREE.Color(color).multiplyScalar(0.12)});
-    var mesh=new THREE.Mesh(sphereGeo,mat); scene.add(mesh);
-    var body=new CANNON.Body({mass:1, material:ballMat});
-    body.addShape(sphereShape);
+  function v3(x,y,z){ return new CANNON.Vec3(x,y,z); }
+  // square pyramid convex (matches ConeGeometry(Rp,Hp,4): base ring on axes, apex up)
+  var pyramidShape = new CANNON.ConvexPolyhedron(
+    [ v3(0,-Hp/2,Rp), v3(Rp,-Hp/2,0), v3(0,-Hp/2,-Rp), v3(-Rp,-Hp/2,0), v3(0,Hp/2,0) ],
+    [ [0,3,2,1], [0,1,4], [1,2,4], [2,3,4], [3,0,4] ]
+  );
+  // octahedron convex (matches OctahedronGeometry: verts on axes)
+  var diamondShape = new CANNON.ConvexPolyhedron(
+    [ v3(Ro,0,0), v3(-Ro,0,0), v3(0,Ro,0), v3(0,-Ro,0), v3(0,0,Ro), v3(0,0,-Ro) ],
+    [ [2,4,0],[2,0,5],[2,5,1],[2,1,4],[3,0,4],[3,5,0],[3,1,5],[3,4,1] ]
+  );
+  var colliders={
+    ball:    function(){ return new CANNON.Sphere(R); },
+    cube:    function(){ return new CANNON.Box(v3(CH,CH,CH)); },
+    pyramid: function(){ return pyramidShape; },
+    diamond: function(){ return diamondShape; }
+  };
+  var maxExtent = Math.max(R, CH*1.42, Rp, Ro);
+
+  var objs=[];
+  function updateCount(){ $("#count").textContent=objs.length; }
+
+  function spawn(shape,color,x,z){
+    var mat=new THREE.MeshStandardMaterial({color:color, metalness:0.05, roughness:0.45});
+    var mesh=new THREE.Mesh(geo[shape],mat); mesh.castShadow=true; scene.add(mesh);
+    var body=new CANNON.Body({mass:1, material:objMat});
+    body.addShape(colliders[shape]());
     body.position.set(x, SPAWN_Y, z);
-    body.velocity.set((Math.random()-0.5)*1.5, -3, (Math.random()-0.5)*1.5);
-    body.linearDamping=0.05; body.angularDamping=0.15;
+    body.velocity.set((Math.random()-0.5)*1.2, -2.5, (Math.random()-0.5)*1.2);
+    body.angularVelocity.set((Math.random()-0.5)*4,(Math.random()-0.5)*4,(Math.random()-0.5)*4);
+    body.linearDamping=0.06; body.angularDamping=0.2;
     world.addBody(body);
-    balls.push({mesh:mesh, body:body, mat:mat});
-    if(balls.length>MAX){ var old=balls.shift(); world.removeBody(old.body); scene.remove(old.mesh); old.mat.dispose(); }
-    updateCount();
-    var d=$("#dropBtn"); d.style.transform="scale(.96)"; setTimeout(function(){ d.style.transform=""; },90);
+    objs.push({mesh:mesh, body:body, mat:mat});
+    if(objs.length>MAX){ var old=objs.shift(); world.removeBody(old.body); scene.remove(old.mesh); old.mat.dispose(); }
+    updateCount(); tock();
+    var d=$("#dropBtn"); d.style.transform="scale(.94)"; setTimeout(function(){ d.style.transform=""; },90);
   }
-  function rand(range){ return (Math.random()-0.5)*2*range; }
-  function doDrop(){ spawnBall(myColor, rand(HALF_W-R-0.15), rand(HALF_D-R-0.15)); }
+  function rand(r){ return (Math.random()-0.5)*2*r; }
+  function doDrop(){ spawn(myShape, myColor, rand(HALF_W-maxExtent-0.1), rand(HALF_D-maxExtent-0.1)); }
 
   $("#dropBtn").addEventListener("click", doDrop);
   $("#clearBtn").addEventListener("click", function(){
-    balls.forEach(function(b){ world.removeBody(b.body); scene.remove(b.mesh); b.mat.dispose(); });
-    balls=[]; updateCount();
+    objs.forEach(function(o){ world.removeBody(o.body); scene.remove(o.mesh); o.mat.dispose(); });
+    objs=[]; updateCount();
   });
 
-  /* ---------- camera orbit (drag) + tap to drop ---------- */
-  var target=new THREE.Vector3(0,2.6,0), Rcam=15;
-  var theta=0.55, phi=1.12, tTheta=theta, tPhi=phi;
+  /* ---------- camera orbit + tap to drop ---------- */
+  var target=new THREE.Vector3(0,2.4,0), Rcam=14.5;
+  var theta=0.6, phi=1.12, tTheta=theta, tPhi=phi;
   var dragging=false, lx=0, ly=0, downT=0, moved=0;
   canvas.addEventListener("pointerdown", function(e){
     dragging=true; lx=e.clientX; ly=e.clientY; downT=Date.now(); moved=0;
@@ -270,8 +334,7 @@
   (function frame(){
     var dt=Math.min(clock.getDelta(),0.033);
     world.step(1/60, dt, 3);
-    for(var i=0;i<balls.length;i++){ balls[i].mesh.position.copy(balls[i].body.position); balls[i].mesh.quaternion.copy(balls[i].body.quaternion); }
-    if(!dragging && !reduce){ tTheta+=0.0012; }
+    for(var i=0;i<objs.length;i++){ objs[i].mesh.position.copy(objs[i].body.position); objs[i].mesh.quaternion.copy(objs[i].body.quaternion); }
     theta+=(tTheta-theta)*0.12; phi+=(tPhi-phi)*0.12;
     camera.position.set(
       target.x + Rcam*Math.sin(phi)*Math.sin(theta),
@@ -282,8 +345,11 @@
     requestAnimationFrame(frame);
   })();
 
-  // start with a few balls so the pit isn't empty
-  spawnBall("#5aa9ff",-1.2,0.4); spawnBall("#ff9f43",0.8,-0.5); spawnBall("#7be06b",0.1,0.9);
+  // seed a few varied objects so the pit reads at a glance
+  spawn("ball","#5b8def",-1.1,0.3);
+  spawn("cube","#f2994a",0.9,-0.4);
+  spawn("pyramid","#6fcf80",0.0,0.7);
+  spawn("diamond","#f277c6",-0.5,-0.6);
 })();
 </script>
 </body>
