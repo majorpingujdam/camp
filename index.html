@@ -3,275 +3,287 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Shake Ball</title>
-<meta name="description" content="Grab, spin and shake a 3D magic 8-ball for live answers — scan to play on your phone." />
+<title>Ball Pit</title>
+<meta name="description" content="A playful 3D ball pit — pick a color and drop balls into the tank. Scan the QR to play on your phone." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" />
 <style>
   :root{
-    --bg:#0B1020; --bg2:#131a33; --ink:#EAF0FF; --muted:#93a0c8; --line:rgba(255,255,255,.14);
-    --panel:rgba(18,24,48,.66); --accent:#8b7bff; --gold:#ffd166; --mint:#5ee6b4;
+    --bg:#0b1020; --bg2:#141b36; --ink:#eef2ff; --muted:#9aa6d0; --line:rgba(255,255,255,.14);
+    --panel:rgba(16,22,46,.72); --accent:#8b7bff; --mint:#5ee6b4; --gold:#ffd166;
     --display:'Bricolage Grotesque', system-ui, sans-serif;
     --body:'IBM Plex Sans', system-ui, sans-serif;
     --mono:'Space Mono', ui-monospace, monospace;
-    --shadow:0 26px 70px -30px rgba(0,0,0,.9);
+    --shadow:0 24px 64px -30px rgba(0,0,0,.85);
+    color-scheme:dark;
   }
   @media (prefers-color-scheme: light){
     :root{
-      --bg:#e9ecf7; --bg2:#f4f6fd; --ink:#171c2e; --muted:#5a6488; --line:rgba(20,24,50,.14);
-      --panel:rgba(255,255,255,.74); --accent:#5b46e0; --gold:#c9911a; --mint:#159a6c;
-      --shadow:0 26px 70px -34px rgba(40,44,90,.5);
+      --bg:#e8ebf7; --bg2:#f5f7fe; --ink:#161a2c; --muted:#5b6488; --line:rgba(20,24,50,.14);
+      --panel:rgba(255,255,255,.78); --accent:#5b46e0; --mint:#149a6c; --gold:#c9911a;
+      --shadow:0 24px 64px -34px rgba(40,44,90,.45);
+      color-scheme:light;
     }
   }
   *{box-sizing:border-box}
   html,body{margin:0; height:100%}
   body{
     font-family:var(--body); color:var(--ink); overflow:hidden;
-    background:radial-gradient(120% 90% at 50% 12%, var(--bg2), var(--bg) 70%);
+    background:radial-gradient(130% 100% at 50% 6%, var(--bg2), var(--bg) 68%);
     -webkit-font-smoothing:antialiased;
   }
+  img{max-width:100%}
+  [hidden]{display:none!important}
   button{font-family:inherit; cursor:pointer}
-  [hidden]{display:none !important}
+  #tank{position:fixed; inset:0; z-index:0; width:100%; height:100%; touch-action:none; cursor:grab}
+  #tank:active{cursor:grabbing}
 
-  #scene{position:fixed; inset:0; z-index:0; width:100%; height:100%; touch-action:none; cursor:grab}
-  #scene:active{cursor:grabbing}
+  .ui{position:fixed; inset:0; z-index:1; pointer-events:none; display:flex; flex-direction:column;
+      padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
 
-  .ui{position:fixed; inset:0; z-index:1; pointer-events:none; display:flex; flex-direction:column; align-items:center;
-      padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(20px + env(safe-area-inset-bottom,0px))}
-
-  .brand{align-self:flex-start; display:flex; align-items:center; gap:10px}
-  .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px var(--accent)}
-  .brand b{font-family:var(--display); font-weight:800; font-size:1.15rem; letter-spacing:.01em}
-  .brand span{display:block; font-family:var(--mono); font-size:.6rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:-2px}
+  .topbar{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+  .brand{display:flex; align-items:center; gap:10px}
+  .brand b{font-family:var(--display); font-weight:800; font-size:1.2rem; letter-spacing:.01em}
+  .brand span{display:block; font-family:var(--mono); font-size:.58rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-top:-3px}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
+  .live{pointer-events:auto; margin-left:auto; display:flex; align-items:center; gap:9px; background:var(--panel); border:1px solid var(--line);
+        border-radius:20px; padding:7px 13px; backdrop-filter:blur(14px); box-shadow:var(--shadow)}
+  .live b{font-variant-numeric:tabular-nums}
+  .clear{pointer-events:auto; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:20px;
+         padding:8px 13px; font-family:var(--mono); font-size:.72rem; backdrop-filter:blur(14px)}
+  .clear:hover{color:var(--ink); border-color:var(--accent)}
 
   .spacer{flex:1}
 
-  /* Answer plaque */
-  .plaque{
-    pointer-events:none; max-width:min(520px,92vw); text-align:center; margin-bottom:14px;
-    background:var(--panel); border:1px solid var(--line); border-radius:18px; padding:18px 22px;
-    backdrop-filter:blur(16px); box-shadow:var(--shadow); opacity:0; transform:translateY(12px) scale(.96);
-    transition:opacity .35s ease, transform .35s cubic-bezier(.2,.9,.3,1.3);
+  .dock{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  .controls{pointer-events:auto; background:var(--panel); border:1px solid var(--line); border-radius:20px;
+            padding:16px; backdrop-filter:blur(16px); box-shadow:var(--shadow); flex:1 1 320px; max-width:520px}
+  .clabel{font-family:var(--mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin-bottom:10px}
+  .swatches{display:flex; flex-wrap:wrap; gap:9px; margin-bottom:14px}
+  .sw{width:34px;height:34px;border-radius:11px; border:2px solid transparent; cursor:pointer; transition:transform .12s; box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+  .sw:hover{transform:scale(1.08)}
+  .sw.on{border-color:var(--ink); transform:scale(1.12)}
+  .drop{width:100%; border:none; border-radius:15px; padding:17px; font-family:var(--display); font-weight:800; font-size:1.25rem;
+        color:#0a0620; display:flex; align-items:center; justify-content:center; gap:10px; transition:transform .1s, box-shadow .2s}
+  .drop:active{transform:scale(.97)}
+  .drop small{font-family:var(--mono); font-weight:400; font-size:.7rem; color:rgba(10,6,32,.6)}
+
+  .join{pointer-events:auto; background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:14px;
+        backdrop-filter:blur(16px); box-shadow:var(--shadow); display:flex; gap:14px; align-items:center; flex:0 0 auto}
+  .join #qr{width:104px;height:104px;background:#fff;border-radius:12px;padding:7px; display:grid; place-items:center}
+  .join #qr img,.join #qr canvas{width:100%!important;height:100%!important;image-rendering:pixelated}
+  .join .jt{max-width:210px}
+  .join h3{font-family:var(--display); font-weight:700; margin:0 0 4px; font-size:1.05rem}
+  .join p{margin:0; color:var(--muted); font-size:.8rem; line-height:1.4}
+  .join .u{font-family:var(--mono); font-size:.62rem; color:var(--mint); word-break:break-all; margin-top:6px; cursor:pointer}
+  .note{pointer-events:none; text-align:center; font-family:var(--mono); font-size:.62rem; color:var(--muted); margin-top:10px; width:100%}
+
+  @media (max-width:640px){
+    .join{order:-1; width:100%}
+    .join #qr{width:84px;height:84px}
+    .controls{max-width:none}
   }
-  .plaque.show{opacity:1; transform:none}
-  .plaque .k{font-family:var(--mono); font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin-bottom:8px}
-  .plaque .a{font-family:var(--display); font-weight:700; font-size:clamp(1.1rem,3.4vw,1.5rem); line-height:1.3; text-wrap:balance}
-
-  .prompt{pointer-events:none; font-family:var(--mono); font-size:.74rem; letter-spacing:.08em; color:var(--muted); margin-bottom:16px; text-align:center;
-          background:var(--panel); border:1px solid var(--line); backdrop-filter:blur(10px); padding:8px 14px; border-radius:20px}
-  .prompt b{color:var(--ink)}
-
-  .controls{pointer-events:auto; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:16px}
-  .btn{border:none; border-radius:14px; padding:14px 22px; font-size:1rem; font-weight:600; display:inline-flex; align-items:center; gap:9px; transition:transform .12s, box-shadow .2s; color:#0a0620}
-  .btn-primary{background:linear-gradient(180deg,var(--accent),color-mix(in srgb,var(--accent) 70%, #000)); color:#fff; box-shadow:0 14px 34px -14px var(--accent)}
-  .btn-primary:hover{transform:translateY(-2px)}
-  .btn-primary:disabled{opacity:.6; cursor:default; transform:none}
-
-  /* QR */
-  .qr{pointer-events:auto; display:flex; align-items:center; gap:14px; max-width:min(460px,94vw);
-      background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px 14px;
-      backdrop-filter:blur(16px); box-shadow:var(--shadow)}
-  .qr img{width:74px; height:74px; border-radius:9px; background:#fff; padding:5px; flex:none}
-  .qr h3{font-family:var(--display); font-weight:700; margin:0 0 2px; font-size:.98rem}
-  .qr p{margin:0; color:var(--muted); font-size:.76rem; line-height:1.35}
-  .qr .url{font-family:var(--mono); font-size:.64rem; color:var(--mint); word-break:break-all; margin-top:4px; cursor:pointer}
+  @media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms!important} }
 </style>
 </head>
 <body>
-<canvas id="scene" aria-label="Interactive 3D magic 8-ball. Drag to spin, tap to ask."></canvas>
+<canvas id="tank" aria-label="A 3D ball pit. Drag to look around, tap to drop a ball."></canvas>
 
 <div class="ui">
-  <div class="brand">
-    <span class="beacon"></span>
-    <div><b>SHAKE BALL</b><span>grab · spin · ask</span></div>
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><div><b>BALL PIT</b><span>pick · drop · pile up</span></div></div>
+    <div class="live"><b id="count">0</b>&nbsp;balls</div>
+    <button class="clear" id="clearBtn">✕ clear</button>
   </div>
 
   <div class="spacer"></div>
 
-  <div class="plaque" id="plaque">
-    <div class="k" id="plaqueK">the ball says</div>
-    <div class="a" id="plaqueA"></div>
-  </div>
+  <div class="dock">
+    <div class="controls">
+      <div class="clabel">1 · your color</div>
+      <div class="swatches" id="swatches"></div>
+      <div class="clabel">2 · drop it in</div>
+      <button class="drop" id="dropBtn">🫳 DROP A BALL <small>(or tap the tank)</small></button>
+    </div>
 
-  <div class="prompt" id="prompt"><b>Grab the ball</b> and fling it around · <b>tap it</b> to ask a question</div>
-
-  <div class="controls">
-    <button class="btn btn-primary" id="askBtn">🎱 Shake for an answer</button>
-  </div>
-
-  <div class="qr">
-    <img id="qrImg" alt="QR code to open this on a phone" />
-    <div>
-      <h3>📱 Scan to play</h3>
-      <p>Open the ball on your phone and shake it there.</p>
-      <div class="url" id="qrUrl" title="Click to copy"></div>
+    <div class="join">
+      <div id="qr"></div>
+      <div class="jt">
+        <h3>📱 Scan to play</h3>
+        <p>Point a phone camera at the code to open the pit on your phone.</p>
+        <div class="u" id="shareUrl" title="Copy link"></div>
+      </div>
     </div>
   </div>
+  <div class="note">Drag to look around · tap the tank or the button to drop a ball.</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 "use strict";
 (function(){
   var $=function(s){return document.querySelector(s);};
   var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches;
-  function cssVar(n,f){ var v=getComputedStyle(document.documentElement).getPropertyValue(n).trim(); return v||f; }
+  var isSmall = Math.min(innerWidth,innerHeight) < 640;
 
-  /* ---------- QR: scan to play ---------- */
-  (function(){
-    var url=window.location.href, isWeb=/^https?:/i.test(url);
-    $("#qrImg").src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data="+encodeURIComponent(url);
-    $("#qrUrl").textContent=isWeb?url:"host online to make this scannable";
-    $("#qrUrl").addEventListener("click", function(){
-      if(!isWeb) return;
-      try{ navigator.clipboard.writeText(url); $("#qrUrl").textContent="copied ✓"; setTimeout(function(){ $("#qrUrl").textContent=url; },1300);}catch(e){}
+  /* ---------- colors ---------- */
+  var COLORS=["#ff5d5d","#ff9f43","#ffd93d","#7be06b","#4ecdc4","#5aa9ff","#8b7bff","#ff6fd8","#ffffff","#2b2b3a"];
+  var myColor = COLORS[Math.floor(Math.random()*8)];
+
+  (function buildSwatches(){
+    var box=$("#swatches");
+    COLORS.forEach(function(c){
+      var b=document.createElement("button");
+      b.className="sw"+(c===myColor?" on":""); b.style.background=c; b.setAttribute("aria-label","color "+c);
+      b.addEventListener("click", function(){
+        myColor=c;
+        box.querySelectorAll(".sw").forEach(function(s){ s.classList.remove("on"); });
+        b.classList.add("on"); $("#dropBtn").style.background=c;
+      });
+      box.appendChild(b);
     });
+    $("#dropBtn").style.background=myColor;
   })();
 
-  /* ==================================================
-     THREE.JS — a draggable 3D magic 8-ball
-  ================================================== */
-  if(typeof THREE==="undefined"){ $("#prompt").textContent="3D couldn’t load — check your connection."; return; }
-  var canvas=$("#scene");
+  /* ---------- QR of this page's own URL ---------- */
+  var SHARE_URL = window.location.href.split("#")[0];
+  var isWeb = /^https?:/i.test(SHARE_URL);
+  try{
+    new QRCode($("#qr"), {text:SHARE_URL, width:180, height:180, colorDark:"#0b1020", colorLight:"#ffffff",
+      correctLevel:(window.QRCode&&QRCode.CorrectLevel)?QRCode.CorrectLevel.M:undefined});
+  }catch(e){ $("#qr").textContent="QR"; }
+  $("#shareUrl").textContent = isWeb ? SHARE_URL : "host this page online to make the QR scannable";
+  $("#shareUrl").addEventListener("click", function(){
+    if(!isWeb) return;
+    try{ navigator.clipboard.writeText(SHARE_URL); var o=$("#shareUrl").textContent; $("#shareUrl").textContent="copied ✓"; setTimeout(function(){ $("#shareUrl").textContent=o; },1200);}catch(e){}
+  });
+
+  /* ==========================================================
+     3D tank: three.js render + cannon.js physics
+  ========================================================== */
+  var canvas=$("#tank");
+  if(typeof THREE==="undefined" || typeof CANNON==="undefined"){ $("#count").textContent="3D failed to load"; return; }
   var renderer;
   try{ renderer=new THREE.WebGLRenderer({canvas:canvas, alpha:true, antialias:true}); }
-  catch(e){ $("#prompt").textContent="Your browser can’t show 3D here."; return; }
+  catch(e){ return; }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 
   var scene=new THREE.Scene();
-  var camera=new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
-  camera.position.set(0,0,7);
+  var camera=new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 200);
+  scene.add(new THREE.AmbientLight(0xffffff,0.6));
+  var key=new THREE.DirectionalLight(0xffffff,0.9); key.position.set(6,12,8); scene.add(key);
+  var p1=new THREE.PointLight(0x8b7bff,0.8,60); p1.position.set(-8,6,6); scene.add(p1);
+  var p2=new THREE.PointLight(0x5ee6b4,0.6,60); p2.position.set(8,4,-2); scene.add(p2);
 
-  // lights
-  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-  var key=new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(4,6,6); scene.add(key);
-  var rim=new THREE.PointLight(new THREE.Color(cssVar("--accent","#8b7bff")).getHex(), 1.2, 40); rim.position.set(-6,-2,4); scene.add(rim);
-  var rim2=new THREE.PointLight(new THREE.Color(cssVar("--mint","#5ee6b4")).getHex(), 0.8, 40); rim2.position.set(6,-4,2); scene.add(rim2);
+  var HALF_W=3, HALF_D=2, HEIGHT=8, R=0.34, SPAWN_Y=7;
+  var MAX = isSmall ? 55 : 150;
 
-  // the ball group
-  var ball=new THREE.Group(); scene.add(ball);
-  var R=2.05;
-  var sphere=new THREE.Mesh(
-    new THREE.SphereGeometry(R,64,64),
-    new THREE.MeshStandardMaterial({color:0x0a0a12, metalness:0.55, roughness:0.18})
-  );
-  ball.add(sphere);
+  var floorMesh=new THREE.Mesh(
+    new THREE.BoxGeometry(2*HALF_W+0.3,0.5,2*HALF_D+0.3),
+    new THREE.MeshStandardMaterial({color:0x1a2140, metalness:0.3, roughness:0.6}));
+  floorMesh.position.y=-0.25; scene.add(floorMesh);
+  var glass=new THREE.Mesh(
+    new THREE.BoxGeometry(2*HALF_W,HEIGHT,2*HALF_D),
+    new THREE.MeshStandardMaterial({color:0x9fb4ff, metalness:0.1, roughness:0.05, transparent:true, opacity:0.06, side:THREE.DoubleSide}));
+  glass.position.y=HEIGHT/2; scene.add(glass);
+  var edges=new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(2*HALF_W,HEIGHT,2*HALF_D)),
+    new THREE.LineBasicMaterial({color:0x8b7bff, transparent:true, opacity:0.5}));
+  edges.position.y=HEIGHT/2; scene.add(edges);
 
-  // the white "8" patch (canvas texture on a small disc, child of ball so it spins along)
-  function patchTexture(){
-    var c=document.createElement("canvas"); c.width=c.height=256;
-    var g=c.getContext("2d");
-    g.fillStyle="#ffffff"; g.beginPath(); g.arc(128,128,120,0,Math.PI*2); g.fill();
-    g.fillStyle="#12163a"; g.font="bold 150px Bricolage Grotesque, sans-serif";
-    g.textAlign="center"; g.textBaseline="middle"; g.fillText("8",128,138);
-    var t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
+  var world=new CANNON.World();
+  world.gravity.set(0,-20,0);
+  world.broadphase=new CANNON.NaiveBroadphase();
+  world.solver.iterations=8;
+  var ballMat=new CANNON.Material("ball"), wallMat=new CANNON.Material("wall");
+  world.addContactMaterial(new CANNON.ContactMaterial(ballMat,wallMat,{friction:0.15,restitution:0.35}));
+  world.addContactMaterial(new CANNON.ContactMaterial(ballMat,ballMat,{friction:0.25,restitution:0.2}));
+
+  function addPlane(px,py,pz, ax,ay,az, angle){
+    var b=new CANNON.Body({mass:0, material:wallMat});
+    b.addShape(new CANNON.Plane());
+    b.quaternion.setFromAxisAngle(new CANNON.Vec3(ax,ay,az), angle);
+    b.position.set(px,py,pz); world.addBody(b);
   }
-  var patch=new THREE.Mesh(
-    new THREE.CircleGeometry(0.78,48),
-    new THREE.MeshStandardMaterial({map:patchTexture(), metalness:0.1, roughness:0.5})
-  );
-  patch.position.set(0,0,R+0.002);
-  ball.add(patch);
+  addPlane(0,0,0, 1,0,0, -Math.PI/2);       // floor
+  addPlane(-HALF_W,0,0, 0,1,0, Math.PI/2);   // left
+  addPlane(HALF_W,0,0, 0,1,0, -Math.PI/2);   // right
+  addPlane(0,0,-HALF_D, 0,1,0, 0);           // back
+  addPlane(0,0,HALF_D, 0,1,0, Math.PI);      // front
 
-  // faint glow halo behind ball
-  var halo=new THREE.Mesh(
-    new THREE.SphereGeometry(R*1.5,32,32),
-    new THREE.MeshBasicMaterial({color:new THREE.Color(cssVar("--accent","#8b7bff")).getHex(), transparent:true, opacity:0.06})
-  );
-  scene.add(halo);
+  var sphereGeo=new THREE.SphereGeometry(R,20,16);
+  var sphereShape=new CANNON.Sphere(R);
+  var balls=[];
+
+  function updateCount(){ $("#count").textContent=balls.length; }
+
+  function spawnBall(color,x,z){
+    var mat=new THREE.MeshStandardMaterial({color:color, metalness:0.2, roughness:0.28,
+      emissive:new THREE.Color(color).multiplyScalar(0.12)});
+    var mesh=new THREE.Mesh(sphereGeo,mat); scene.add(mesh);
+    var body=new CANNON.Body({mass:1, material:ballMat});
+    body.addShape(sphereShape);
+    body.position.set(x, SPAWN_Y, z);
+    body.velocity.set((Math.random()-0.5)*1.5, -3, (Math.random()-0.5)*1.5);
+    body.linearDamping=0.05; body.angularDamping=0.15;
+    world.addBody(body);
+    balls.push({mesh:mesh, body:body, mat:mat});
+    if(balls.length>MAX){ var old=balls.shift(); world.removeBody(old.body); scene.remove(old.mesh); old.mat.dispose(); }
+    updateCount();
+    var d=$("#dropBtn"); d.style.transform="scale(.96)"; setTimeout(function(){ d.style.transform=""; },90);
+  }
+  function rand(range){ return (Math.random()-0.5)*2*range; }
+  function doDrop(){ spawnBall(myColor, rand(HALF_W-R-0.15), rand(HALF_D-R-0.15)); }
+
+  $("#dropBtn").addEventListener("click", doDrop);
+  $("#clearBtn").addEventListener("click", function(){
+    balls.forEach(function(b){ world.removeBody(b.body); scene.remove(b.mesh); b.mat.dispose(); });
+    balls=[]; updateCount();
+  });
+
+  /* ---------- camera orbit (drag) + tap to drop ---------- */
+  var target=new THREE.Vector3(0,2.6,0), Rcam=15;
+  var theta=0.55, phi=1.12, tTheta=theta, tPhi=phi;
+  var dragging=false, lx=0, ly=0, downT=0, moved=0;
+  canvas.addEventListener("pointerdown", function(e){
+    dragging=true; lx=e.clientX; ly=e.clientY; downT=Date.now(); moved=0;
+    canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);
+  });
+  addEventListener("pointermove", function(e){
+    if(!dragging) return;
+    var dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY; moved+=Math.abs(dx)+Math.abs(dy);
+    tTheta-=dx*0.006; tPhi=Math.max(0.35,Math.min(1.45, tPhi-dy*0.006));
+  });
+  addEventListener("pointerup", function(){
+    if(!dragging) return; dragging=false;
+    if(moved<10 && (Date.now()-downT)<300){ doDrop(); }
+  });
+  addEventListener("pointercancel", function(){ dragging=false; });
 
   function resize(){ renderer.setSize(innerWidth,innerHeight,false); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
   resize(); addEventListener("resize",resize);
 
-  /* ---------- drag / spin physics ---------- */
-  var dragging=false, lastX=0, lastY=0, downX=0, downY=0, downT=0, moved=0;
-  var velX=0, velY=0;                 // angular velocity
-  var shakeT=0;                       // remaining shake time
-
-  function onDown(e){
-    dragging=true; canvas.setPointerCapture&&canvas.setPointerCapture(e.pointerId);
-    lastX=downX=e.clientX; lastY=downY=e.clientY; downT=Date.now(); moved=0; velX=velY=0;
-  }
-  function onMove(e){
-    if(!dragging) return;
-    var dx=e.clientX-lastX, dy=e.clientY-lastY;
-    lastX=e.clientX; lastY=e.clientY; moved+=Math.abs(dx)+Math.abs(dy);
-    ball.rotation.y += dx*0.006;
-    ball.rotation.x += dy*0.006;
-    velY = dx*0.006; velX = dy*0.006;
-  }
-  function onUp(e){
-    if(!dragging) return; dragging=false;
-    var dt=Date.now()-downT;
-    // a quick tap with little movement = "ask"
-    if(moved<10 && dt<300){ ask(); }
-  }
-  canvas.addEventListener("pointerdown", onDown);
-  addEventListener("pointermove", onMove);
-  addEventListener("pointerup", onUp);
-  addEventListener("pointercancel", function(){ dragging=false; });
-
-  /* ---------- ask the ball (Advice Slip API) ---------- */
-  var asking=false;
-  function ask(){
-    if(asking) return; asking=true;
-    $("#askBtn").disabled=true;
-    $("#plaque").classList.remove("show");
-    $("#prompt").innerHTML="<b>shaking…</b>";
-    shakeT=0.7; // seconds of shake
-    // fetch during the shake so the answer lands as it settles
-    fetch("https://api.adviceslip.com/advice?t="+Date.now())
-      .then(function(r){return r.json();})
-      .then(function(d){ setTimeout(function(){ reveal(d.slip.advice); }, 720); })
-      .catch(function(){ setTimeout(function(){ reveal("The ball is cloudy — ask again."); }, 720); });
-  }
-  function reveal(text){
-    $("#plaqueA").textContent = "“"+text+"”";
-    $("#plaque").classList.add("show");
-    $("#prompt").innerHTML="<b>tap the ball</b> to ask again";
-    $("#askBtn").disabled=false; asking=false;
-    if(typeof confetti==="function" && !reduce){
-      confetti({particleCount:60, spread:70, startVelocity:32, origin:{y:.5},
-        colors:[cssVar("--accent","#8b7bff"),cssVar("--gold","#ffd166"),cssVar("--mint","#5ee6b4")]});
-    }
-  }
-  $("#askBtn").addEventListener("click", ask);
-
-  /* ---------- render loop ---------- */
-  var t=0, clock=new THREE.Clock();
-  function frame(){
-    var dt=Math.min(clock.getDelta(),0.05); t+=dt;
-    if(!dragging){
-      if(shakeT>0){
-        shakeT-=dt;
-        var s=shakeT*1.4;
-        ball.rotation.x += (Math.random()-0.5)*s;
-        ball.rotation.y += (Math.random()-0.5)*s;
-      } else {
-        // inertia + gentle idle drift
-        ball.rotation.y += velY; ball.rotation.x += velX;
-        velY*=0.965; velX*=0.965;
-        if(Math.abs(velY)<0.0005 && Math.abs(velX)<0.0005 && !reduce){ ball.rotation.y += 0.003; }
-      }
-    }
-    // gentle bob
-    ball.position.y = Math.sin(t*1.4)*0.08;
-    halo.position.copy(ball.position);
+  var clock=new THREE.Clock();
+  (function frame(){
+    var dt=Math.min(clock.getDelta(),0.033);
+    world.step(1/60, dt, 3);
+    for(var i=0;i<balls.length;i++){ balls[i].mesh.position.copy(balls[i].body.position); balls[i].mesh.quaternion.copy(balls[i].body.quaternion); }
+    if(!dragging && !reduce){ tTheta+=0.0012; }
+    theta+=(tTheta-theta)*0.12; phi+=(tPhi-phi)*0.12;
+    camera.position.set(
+      target.x + Rcam*Math.sin(phi)*Math.sin(theta),
+      target.y + Rcam*Math.cos(phi),
+      target.z + Rcam*Math.sin(phi)*Math.cos(theta));
+    camera.lookAt(target);
     renderer.render(scene,camera);
     requestAnimationFrame(frame);
-  }
-  frame();
+  })();
 
-  // theme-reactive lights
-  if(window.matchMedia){
-    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function(){
-      rim.color=new THREE.Color(cssVar("--accent","#8b7bff"));
-      rim2.color=new THREE.Color(cssVar("--mint","#5ee6b4"));
-      halo.material.color=new THREE.Color(cssVar("--accent","#8b7bff"));
-    });
-  }
+  // start with a few balls so the pit isn't empty
+  spawnBall("#5aa9ff",-1.2,0.4); spawnBall("#ff9f43",0.8,-0.5); spawnBall("#7be06b",0.1,0.9);
 })();
 </script>
 </body>
